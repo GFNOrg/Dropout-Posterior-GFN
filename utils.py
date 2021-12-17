@@ -76,3 +76,12 @@ def trajectory_loglikelihood_reward_fn(data_maker, X=None, prior=None):
         return traj_loglikelihoods
 
     return reward_fn
+
+
+def l1_distance(distribution1, distribution2):
+    """
+    :param distribution1: discrete distribution as list
+    :param distribution2: discrete distribution as list
+    :return: L1 distance
+    """
+    return np.sum(np.abs(np.array(distribution1) - np.array(distribution2)))

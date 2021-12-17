@@ -107,13 +107,13 @@ def modified_trajectory_balance_loss(pf, traj, MIN_REW, pb_fn, reward_fn):
     log_pb = torch.log(pb)
     pred = final_forward_logprob_differences + log_pb - forward_logprobs
 
-    trajectory_rewards = reward_fn(traj)
-    trajectory_rewards = torch.tensor(trajectory_rewards).clamp_min(MIN_REW).to(pred.dtype)
+    rewards = reward_fn(traj)
+    trajectory_rewards = torch.tensor(rewards).clamp_min(MIN_REW).to(pred.dtype)
 
     targets = trajectory_rewards[:-1] - trajectory_rewards[1:]
     loss = nn.MSELoss(reduction='sum')(pred, targets)
 
-    return loss
+    return loss, rewards
 
 
 def trajectory_balance_loss(pf, traj, pb_fn, reward_fn):

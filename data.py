@@ -54,7 +54,6 @@ class GaussianBinaryMask:
         """
         thetas = enumerate_all_binary_matrices(self.n, self.d)
         loglikelihoods = np.array([self.loglikelihood(X, theta) for theta in thetas])
-        print(loglikelihoods)
         if prior is None:
             prior = 1. / (2 ** (self.n * self.d)) * np.ones(2 ** (self.n * self. d))
         logpriors = np.log(prior)
