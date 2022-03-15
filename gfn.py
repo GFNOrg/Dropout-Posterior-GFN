@@ -24,7 +24,7 @@ class GFN(nn.Module):
     def forward(self, s):
         """
         :param s: (batched) states of the GFN. tensor of size k x m
-        :return: P_F(. | s) represented as a tensor of size (k + 1) x m. Invalid action values are replaced with -inf????
+        :return: P_F(. | s) represented as a tensor of size k x m+1.
         """
         assert s.ndim == 2 and s.shape[1] == self.m
         logits = self.logit_maker(s)
@@ -51,7 +51,6 @@ class BinaryMaskGFN(GFN):
         :return: a complete GFN trajectory (i.e. ending in a terminating state) as a T x m tensor
         The function assumes the source state of the GFN is [0, 0, ..., 0]
         """
-
         theta = torch.zeros(1, self.m)
         trajectory = [theta.clone().detach()]
         while True:
@@ -113,7 +112,7 @@ def modified_trajectory_balance_loss(pf, traj, MIN_REW, pb_fn, reward_fn):
     targets = trajectory_rewards[:-1] - trajectory_rewards[1:]
     loss = nn.MSELoss(reduction='sum')(pred, targets)
 
-    return loss, rewards
+    return loss, rewards, forward_logprobs.sum()
 
 
 def trajectory_balance_loss(pf, traj, pb_fn, reward_fn):
