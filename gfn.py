@@ -115,7 +115,7 @@ def modified_trajectory_balance_loss(pf, traj, MIN_REW, pb_fn, reward_fn):
     return loss, rewards, forward_logprobs.sum()
 
 
-def trajectory_balance_loss(pf, traj, pb_fn, reward_fn):
+def trajectory_balance_loss(pf, traj, MIN_REW, pb_fn, reward_fn):
     """
     :param pf: nn.Module representing P_F (can be an instantiation of BinaryMaskGFN e.g.)
     :param traj: sampled trajectory
@@ -130,17 +130,15 @@ def trajectory_balance_loss(pf, traj, pb_fn, reward_fn):
     forward_logprobs = trajectory_logits[:-1, :-1][
         torch.arange(traj.shape[0] - 1), (traj[1:, :] - traj[:-1, :]).argmax(1)]  # 1-dim tensor of size length-1
     forward_logprobs = forward_logprobs - denominators[:-1]
-
     sink_logprob = trajectory_logits[-1, -1] - denominators[-1]
-
     pb = pb_fn(traj)
     log_pb = torch.log(pb)
 
     pred = pf.logZ + forward_logprobs.sum() + sink_logprob - log_pb.sum()
-
-    trajectory_rewards = reward_fn(traj)
-    targets = torch.tensor(trajectory_rewards).to(pred.dtype)
-
+    trajectory_rewards = reward_fn(traj[[-1]])  # log-likelihood (maybe + log-prior)
+    targets = torch.tensor(trajectory_rewards).clamp_min(MIN_REW).to(pred.dtype)[0]
     loss = nn.MSELoss()(pred, targets)
 
-    return loss
+    trajectory_logprob = forward_logprobs.sum() + sink_logprob
+
+    return loss, trajectory_rewards, trajectory_logprob
